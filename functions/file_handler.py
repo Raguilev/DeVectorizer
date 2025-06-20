@@ -1,18 +1,13 @@
 from PyQt5.QtWidgets import QListWidget, QListWidgetItem
-from PyQt5.QtCore import Qt
-
 import os
 
 def add_file(list_widget: QListWidget, file_path: str):
     if file_path.lower().endswith(".pdf"):
-        existing_files = [item.data(256) for item in list_widget.findItems("*", Qt.MatchWildcard)]
-        if file_path not in existing_files:
-            item = QListWidgetItem(os.path.basename(file_path))
-            item.setData(256, file_path)  # store full path internally
+        filenames = [list_widget.item(i).data(0) for i in range(list_widget.count())]
+        if file_path not in filenames:
+            item = QListWidgetItem(os.path.basename(file_path))  # mostrar solo el nombre
+            item.setData(0, file_path)  # guardar la ruta completa
             list_widget.addItem(item)
 
 def get_selected_files(list_widget: QListWidget):
-    return [item.data(256) for item in list_widget.selectedItems()]
-
-def get_full_paths(list_widget: QListWidget):
-    return [list_widget.item(i).data(256) for i in range(list_widget.count())]
+    return [list_widget.item(i).data(0) for i in range(list_widget.count())]
