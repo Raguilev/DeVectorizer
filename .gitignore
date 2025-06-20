@@ -1,0 +1,26 @@
+# Ignore virtual environments
+env/
+venv/
+
+# Ignore input or generated PDF files
+*.pdf
+regatas.pdf
+
+# Ignore output folders
+paginas_extraidas/
+vectores_identificados/
+
+# Ignore intermediate image files if generated
+*.png
+*.jpg
+*.jpeg
+
+# Ignore temporary or compiled Python files
+__pycache__/
+*.pyc
+*.pyo
+*.log
+
+# Ignore IDE settings (VS Code or PyCharm)
+.vscode/
+.idea/
