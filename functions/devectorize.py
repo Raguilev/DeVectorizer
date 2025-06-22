@@ -4,7 +4,7 @@ import io
 from PIL import Image
 
 def devectorize_pdf(file_paths):
-    output_dir = "devectorized"
+    output_dir = os.path.join("results", "devectorized")
     os.makedirs(output_dir, exist_ok=True)
 
     for file_path in file_paths:

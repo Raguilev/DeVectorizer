@@ -2,7 +2,7 @@ import os
 import fitz  # PyMuPDF
 
 def mark_vectors_in_pdf(file_paths):
-    output_dir = "marked"
+    output_dir = os.path.join("results", "marked")
     os.makedirs(output_dir, exist_ok=True)
 
     for file_path in file_paths:
@@ -18,7 +18,7 @@ def mark_vectors_in_pdf(file_paths):
                     rect = d.get("rect")
                     shape = page.new_shape()
                     shape.draw_rect(rect)
-                    shape.finish(color=(1, 0, 0), width=1)  # red border
+                    shape.finish(color=(1, 0, 0), width=1)
                     shape.commit()
         doc.save(output_path)
         doc.close()

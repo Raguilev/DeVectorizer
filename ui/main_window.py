@@ -1,73 +1,76 @@
 import os
+import webbrowser
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QPushButton, QFileDialog,
-    QLabel, QListWidget, QMessageBox, QHBoxLayout
+    QLabel, QListWidget, QMessageBox, QHBoxLayout, QListWidgetItem
 )
-from PyQt5.QtCore import Qt, QRunnable, QThreadPool, pyqtSlot, QObject, pyqtSignal
-from functions.file_handler import add_file, get_selected_files
+from PyQt5.QtCore import Qt
+from functions.file_handler import add_file, get_selected_files, clear_files
 from functions.mark_vectors import mark_vectors_in_pdf
 from functions.devectorize import devectorize_pdf
-
-class WorkerSignals(QObject):
-    finished = pyqtSignal(str)
-
-class Worker(QRunnable):
-    def __init__(self, func, files, callback):
-        super().__init__()
-        self.func = func
-        self.files = files
-        self.signals = WorkerSignals()
-        self.signals.finished.connect(callback)
-
-    @pyqtSlot()
-    def run(self):
-        self.func(self.files)
-        self.signals.finished.emit("done")
 
 class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("✨ DeVectorizer PDF Tool")
-        self.resize(520, 500)
+        self.setWindowTitle("DeVectorizer PDF Tool")
+        self.resize(600, 500)
 
         self.layout = QVBoxLayout()
 
-        self.title = QLabel("<h2>✨ DeVectorizer PDF Tool</h2>")
+        self.title = QLabel("<b> DeVectorizer PDF Tool</b>")
         self.title.setAlignment(Qt.AlignCenter)
-        self.layout.addWidget(self.title)
-
-        self.info = QLabel("Drop PDF files here or use the button to browse.")
-        self.info.setAlignment(Qt.AlignCenter)
-        self.layout.addWidget(self.info)
-
+        self.subtitle = QLabel("Drop PDF files here or use the button to browse.")
+        self.subtitle.setAlignment(Qt.AlignCenter)
         self.list_widget = QListWidget()
-        self.list_widget.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.list_widget.customContextMenuRequested.connect(self.remove_item)
-        self.layout.addWidget(self.list_widget)
 
-        button_layout = QHBoxLayout()
-        self.select_button = QPushButton("Select PDFs")
+        # Botones de la parte inferior
+        self.bottom_layout = QHBoxLayout()
+
         self.mark_button = QPushButton("Mark Vectors")
         self.clean_button = QPushButton("Devectorize")
 
-        button_layout.addWidget(self.select_button)
-        button_layout.addWidget(self.mark_button)
-        button_layout.addWidget(self.clean_button)
-        self.layout.addLayout(button_layout)
+        self.add_button = QPushButton("➕")
+        self.folder_button = QPushButton("📁")
+        self.clear_button = QPushButton("❌")
+
+        self.add_button.setFixedWidth(40)
+        self.folder_button.setFixedWidth(40)
+        self.clear_button.setFixedWidth(40)
+
+        # Contenedor para los botones de acción
+        self.bottom_layout.addWidget(self.mark_button)
+        self.bottom_layout.addWidget(self.clean_button)
+        self.bottom_layout.addStretch()
+        self.bottom_layout.addWidget(self.add_button)
+        self.bottom_layout.addWidget(self.folder_button)
+        self.bottom_layout.addWidget(self.clear_button)
+
+        self.layout.addWidget(self.title)
+        self.layout.addWidget(self.subtitle)
+        self.layout.addWidget(self.list_widget)
+        self.layout.addLayout(self.bottom_layout)
 
         self.setLayout(self.layout)
 
-        self.select_button.clicked.connect(self.open_file_dialog)
+        self.add_button.clicked.connect(self.open_file_dialog)
+        self.folder_button.clicked.connect(self.open_results_folder)
+        self.clear_button.clicked.connect(self.clear_file_list)
         self.mark_button.clicked.connect(self.handle_mark_vectors)
         self.clean_button.clicked.connect(self.handle_devectorize)
 
         self.setAcceptDrops(True)
-        self.threadpool = QThreadPool()
 
     def open_file_dialog(self):
         files, _ = QFileDialog.getOpenFileNames(self, "Select PDF files", "", "PDF Files (*.pdf)")
         for file in files:
             add_file(self.list_widget, file)
+
+    def open_results_folder(self):
+        os.makedirs("results", exist_ok=True)
+        webbrowser.open(os.path.abspath("results"))
+
+    def clear_file_list(self):
+        clear_files(self.list_widget)
 
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls():
@@ -79,27 +82,22 @@ class MainWindow(QWidget):
         for url in event.mimeData().urls():
             add_file(self.list_widget, url.toLocalFile())
 
-    def remove_item(self, pos):
-        item = self.list_widget.itemAt(pos)
-        if item:
-            self.list_widget.takeItem(self.list_widget.row(item))
-
     def handle_mark_vectors(self):
-        self.start_process(mark_vectors_in_pdf)
-
-    def handle_devectorize(self):
-        self.start_process(devectorize_pdf)
-
-    def start_process(self, function):
         files = get_selected_files(self.list_widget)
         if not files:
             QMessageBox.warning(self, "Warning", "No PDF files selected.")
             return
+        self.subtitle.setText("Processing request...")
+        mark_vectors_in_pdf(files)
+        self.subtitle.setText("Drop PDF files here or use the button to browse.")
+        QMessageBox.information(self, "Done", "Marked PDFs saved in 'results/marked/' folder.")
 
-        self.info.setText("Processing request...")
-        worker = Worker(function, files, self.finish_process)
-        self.threadpool.start(worker)
-
-    def finish_process(self):
-        self.info.setText("Drop PDF files here or use the button to browse.")
-        QMessageBox.information(self, "Done", "Process completed successfully.")
+    def handle_devectorize(self):
+        files = get_selected_files(self.list_widget)
+        if not files:
+            QMessageBox.warning(self, "Warning", "No PDF files selected.")
+            return
+        self.subtitle.setText("Processing request...")
+        devectorize_pdf(files)
+        self.subtitle.setText("Drop PDF files here or use the button to browse.")
+        QMessageBox.information(self, "Done", "Clean PDFs saved in 'results/devectorized/' folder.")
