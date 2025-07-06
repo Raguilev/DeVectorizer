@@ -15,6 +15,10 @@ vectores_identificados/
 *.jpg
 *.jpeg
 
+# ...pero permitir todo lo que esté dentro de /images
+!images/
+!images/*.png
+
 # Ignore temporary or compiled Python files
 __pycache__/
 *.pyc

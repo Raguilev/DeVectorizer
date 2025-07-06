@@ -1,5 +1,5 @@
 import os
-import fitz  # PyMuPDF
+import fitz
 
 def mark_vectors_in_pdf(file_paths):
     output_dir = os.path.join("results", "marked")

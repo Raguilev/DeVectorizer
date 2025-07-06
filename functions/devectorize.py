@@ -1,5 +1,5 @@
 import os
-import fitz  # PyMuPDF
+import fitz
 import io
 from PIL import Image
 
